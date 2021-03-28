@@ -77,3 +77,117 @@ Perceptron's random weights = [-0.25091976  0.90142861  0.46398788], and random 
 Input vector: [[0.15601864 0.15599452 0.05808361]]
 Perceptron's output value given `x`: 1
 ```
+
+### Layering Neurons Together
+```python
+class FullyConnectedLayer(object):
+    """A simple fully-connected NN layer.
+    Args:
+        num_inputs (int): The input vector size / number of input values.
+        layer_size (int): The output vector size / number of neurons in the layer.
+        activation_function (callable): The activation function for this layer.
+    Attributes:
+        W (ndarray): The weight values for each input.
+        b (ndarray): The bias value, added to the weighted sum.
+        size (int): The layer size / number of neurons.
+        activation_function (callable): The activation function computing the neuron's output.
+        x (ndarray): The last provided input vector, stored for backpropagation.
+        y (ndarray): The corresponding output, also stored for backpropagation.
+        derivated_activation_function (callable): The corresponding derivated function for backpropagation.
+        dL_dW (ndarray): The derivative of the loss, with respect to the weights W.
+        dL_db (ndarray): The derivative of the loss, with respect to the bias b.
+    """
+    def __init__(self, num_inputs, layer_size, activation_function, derivated_activation_function=None):
+        super().__init__()
+
+        self.W = np.random.standard_normal((num_inputs, layer_size))
+        self.b = np.random.standard_normal(layer_size)
+        self.size = layer_size
+
+        self.activation_function = activation_function
+        self.derivated_activation_function = derivated_activation_function
+        self.x, self.y = None, None
+        self.dL_dW, self.dL_db = None, None
+
+    def forward(self, x):
+        """
+        Forward the input vector through the layer, returning its activation vector.
+        Args:
+            x (ndarray): The input vector, of shape `(batch_size, num_inputs)`
+        Returns:
+            activation (ndarray): The activation value, of shape `(batch_size, layer_size)`.
+        """
+        z = np.dot(x, self.W) + self.b
+        self.y = self.activation_function(z)
+        self.x = x # we store the input and output values for back-propagation
+
+        return self.y
+
+    def backward(self, dL_dy):
+        """
+        Back-propagate the loss, computing all the derivatives, storing those w.r.t. the layer parameters,
+        and returning the loss w.r.t. its inputs for further propagation.
+        Args:
+            dL_dy (ndarray): The loss derivative w.r.t. the layer's output (dL/dy = l'_{k+1}).
+        Returns:
+            dL_dx (ndarray): The loss derivative w.r.t. the layer's input (dL/dx).
+        """
+
+        dy_dz = self.derivated_activation_function(self.y) # = f'
+        dL_dz = (dL_dy * dy_dz) # dL/dz = dL/dy * dy/dz = l '_{k+1} * f'
+        dz_dw = self.x.T    
+        dz_dx = self.W.T    
+        dz_db = np.ones(dL_dy.shape[0]) # dz/db = d(W.x + b) /db = 0 + db/db = "ones" -vector
+
+        # Computing the derivtives with respect to the layer's parameters, and storing them for opt. optimization:
+        self.dL_dW = np.dot(dz_dw, dL_dz)
+        self.dL_db = np.dot(dz_db, dL_dz)
+
+        # Computing the derivative with respect to the input, to be passed to the previous layers (their 'dL_dy'):
+        dL_dx = np.dot(dL_dz, dz_dx)
+        return dL_dx
+
+    def optimize(self, epsilon):
+        """
+        Optimize the layer's parameters, using the stored derivative values.
+        Args:
+            epsilon (float): The learning rate.
+        """
+        self.W -= epsilon * self.dL_dW
+        self.b -= epsilon * self.dL_db
+
+
+
+input_size = 2
+num_neurons = 3
+relu_function = lambda y: np.maximum(y, 0)
+
+layer = FullyConnectedLayer(num_inputs=input_size, layer_size=num_neurons, activation_function=relu_function)
+
+x1 = np.random.uniform(-1, 1, 2).reshape(1, 2)
+print("Input vector #1: {}".format(x1))
+
+x2 = np.random.uniform(-1, 1, 2).reshape(1, 2)
+print("Input vecotr #2: {}".format(x2))
+
+y1 = layer.forward(x1)
+print("Layer's output value given `x1`: {}".format(y1))
+
+y2 = layer.forward(x2)
+print("Layer's output value given `x2`: {}".format(y2))
+
+x12 = np.concatenate ((x1, x2))  # stack of input vector, of shape `(2,2)`
+y12 = layer.forward(x12)
+print("Layer's output value given `[x1, x2] : \n{}".format(y12))
+
+```
+Result
+```
+Input vector #1: [[ 0.60439396 -0.85089871]]
+Input vecotr #2: [[0.97377387 0.54448954]]
+Layer's output value given `x1`: [[0.         0.         0.32338208]]
+Layer's output value given `x2`: [[0.39931638 0.         0.        ]]
+Layer's output value given `[x1, x2] : 
+[[0.         0.         0.32338208]
+ [0.39931638 0.         0.        ]]
+```
