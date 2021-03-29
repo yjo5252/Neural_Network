@@ -1,5 +1,6 @@
  핸즈온 컴퓨터 비전 & 텐서플로우 2 (2019) 필사
 
+[챕터 1 주피터 노트북](https://nbviewer.jupyter.org/github/PacktPublishing/Hands-On-Computer-Vision-with-TensorFlow-2/blob/master/Chapter01/ch1_nb1_build_and_train_neural_network_from_scratch.ipynb)
 ## Chapter 1
 
 ### 1.1 Building and Training a Neural Network from Scratch 
